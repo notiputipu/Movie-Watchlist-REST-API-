@@ -668,10 +668,19 @@ function setRatingValue(val) {
   });
 }
 
+let watchedSubmissionPending = false;
+
 async function handleWatchedSubmit(event, movieId) {
   event.preventDefault();
+  const form = event.currentTarget;
+  if (watchedSubmissionPending || form.dataset.saved === 'true') return;
+
   const rating = parseFloat(document.getElementById('watched-rating-input').value);
   const review = document.getElementById('watched-review-input').value.trim();
+  const submitButton = form.querySelector('button[type="submit"]');
+  watchedSubmissionPending = true;
+  submitButton.disabled = true;
+  form.setAttribute('aria-busy', 'true');
 
   try {
     // POST /api/watched
@@ -686,12 +695,17 @@ async function handleWatchedSubmit(event, movieId) {
       })
     });
 
+    form.dataset.saved = 'true';
     showToast('Catatan film berhasil disimpan! ⭐', 'success');
     closeMovieDetailModal();
     await Promise.all([loadWatchedList(), loadWatchlist()]);
     applyMovieFilters();
   } catch (err) {
     showToast(err.message, 'error');
+  } finally {
+    watchedSubmissionPending = false;
+    form.removeAttribute('aria-busy');
+    if (form.dataset.saved !== 'true') submitButton.disabled = false;
   }
 }
 

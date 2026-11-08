@@ -200,4 +200,3 @@ Local `.env`, installed `node_modules`, and log files are ignored by Git. Commit
 
 See the [backend guide](API/README.md) for implementation details and the
 [frontend guide](frontend/README.md) for UI instructions. The dataset and companion
-UI originated from the GDGoC FilmLog backend recruitment starter pack.
