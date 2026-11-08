@@ -58,3 +58,6 @@ app.use((_req, res) => {
     sendError(res, 404, 'Route not found');
 });
 app.use(errorHandler);
+
+// Vercel imports the app; server.js starts it when running locally.
+export default app;

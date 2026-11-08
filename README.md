@@ -28,7 +28,7 @@ Source files are plain `.js`; there is no TypeScript compilation or `dist` folde
 ## Quick start
 
 The commands below use Windows PowerShell. Use `npm` instead of `npm.cmd` on
-other platforms; `npm.cmd` also avoids PowerShell restrictions on `npm.ps1`.
+other platforms, `npm.cmd` also avoids PowerShell restrictions on `npm.ps1`.
 
 ### 1. Install dependencies
 
@@ -194,25 +194,6 @@ Invoke-RestMethod 'http://localhost:8000/api/movies?genre=Sci-Fi&search=Inceptio
 For the UI, register, log in, add a movie to Watchlist, then log a viewing. Confirm
 it appears in Watched & Reviews and disappears from your watchlist. Use AI
 Assistant to see a live recommendation after configuring a Gemini key.
-
-**Current automated-test status:** the automated test files and their npm
-scripts have been removed. The manual checks and live Gemini smoke command
-remain available.
-
-## Troubleshooting
-
-- **Port 8000 is already in use:** stop the duplicate API terminal with `Ctrl+C`
-  and keep one server running, or change `PORT` in `.env`.
-- **Failed running src/server.js:** this is Node watch mode's summary. Read the
-  error above it for the actual cause; another instance may still serve the page.
-- **Database connection/table errors:** start MySQL, check `DB_*` settings, and
-  run `db:setup` followed by `db:seed`.
-- **JWT_SECRET error:** set a generated secret of at least 32 bytes and restart.
-- **Gemini unavailable or timed out:** check the key, configured model, account
-  access/quota, and internet connection; retry the smoke command after correcting
-  settings. Requests have a 20-second deadline.
-- **Frontend calls an old API address:** update the saved API Base URL in the
-  page's Settings. The default uses the page's own origin plus `/api`.
 
 Local `.env`, installed `node_modules`, and log files are ignored by Git. Commit
 `.env.example` with empty secrets and `package-lock.json` for reproducible setup.

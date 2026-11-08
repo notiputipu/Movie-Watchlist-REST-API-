@@ -3,7 +3,6 @@
 FilmLog is a JavaScript REST API using Node.js 24, Express, MySQL, mysql2, and
 Zod. It supports account registration/login, movie discovery, private watchlists,
 viewing history, and Gemini recommendations grounded in the starter dataset.
-There is no Prisma, TypeScript, build step, or dist directory.
 
 ## First run
 
@@ -16,9 +15,9 @@ There is no Prisma, TypeScript, build step, or dist directory.
 5. Initialize and seed the database, then start the API:
 
 ```powershell
-npm.cmd run db:setup
-npm.cmd run db:seed
-npm.cmd run dev
+npm run db:setup
+npm run db:seed
+npm run dev
 ```
 
 Each checkout needs its own local `.env` with database credentials and a generated
@@ -31,19 +30,6 @@ The default API address is `http://localhost:8000/api`. Try:
 Invoke-RestMethod http://localhost:8000/api/health
 Invoke-RestMethod http://localhost:8000/api/movies
 ```
-
-Stop the development server with `Ctrl+C`. `npm.cmd start` runs the same source
-without automatic restart. The MySQL Windows service is independent of Node.
-
-For a local-only Windows MySQL service, review the optional helper first:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Restrict-MySqlToLocalhost.ps1 -WhatIf
-```
-
-Run it without `-WhatIf` from an Administrator PowerShell to apply the change.
-Use `-ServiceName` if your service has a different name. It preserves database
-files and restores the previous configuration if restarting the service fails.
 
 ## Environment settings
 
@@ -59,36 +45,20 @@ files and restores the previous configuration if restarting the service fails.
 | `GEMINI_MODEL` | Default `gemini-3.8-flash`; choose a model available to your key |
 | `BROWSER_CHANNEL` | Legacy test setting; unused while the test files are absent |
 
-To generate a fresh secret locally:
-
-```powershell
-node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
-```
-
-Paste the generated value into `.env`; do not use the empty template value.
-`DB_CONNECTION_LIMIT` optionally changes the connection pool size (default 10).
-
-CORS allows the API's own origin, so the frontend works on the same server.
-Additional origins default to `http://localhost:3000,http://127.0.0.1:3000`. Add your actual
-origin when using a separate frontend port such as VS Code Live Server's 5500.
-Origins include scheme, hostname, and port, with no path or trailing slash.
-Disallowed Origin headers receive 403. Requests without Origin remain usable
-from command-line clients. CORS controls browser access; JWTs authorize users.
-
 ## Running the companion frontend
 
 One server now serves the page and API. From the repository root:
 
 ```powershell
 cd API
-npm.cmd run dev
+npm run dev
 ```
 
-Open `http://localhost:8000`. Express serves only the public `frontend` folder;
-API source and `.env` are not exposed. The default API base URL uses the page's
+Open `http://localhost:8000`. Express serves only the public `frontend` folder,
+API source and `.env` are not exposed. The default API base URL uses the page
 own origin plus `/api`, so it follows a changed server port automatically.
 Existing API URL choices in browser Settings remain saved; update Settings if
-one points at a different server. Python or a separate static server is optional.
+one points at a different server. 
 
 The frontend has a scoped content security policy allowing its existing CDN
 scripts, fonts, styles, and inline button handlers. API responses retain the
@@ -151,20 +121,6 @@ settings does not select a database or open connections.
 | `watchlists` | One entry per user/movie pair |
 | `reviews` | Each viewing with its own rating, opinion, and timestamp |
 
-Foreign keys link watchlists and reviews to their users and movies. IDs use
-matching unsigned integer types; deleting a parent cascades to dependent records.
-MySQL's CHECK constraint enforces ratings 1-5 even if code bypasses Zod.
-
-Creation dates are DATETIME(3). Every acquired connection sets its MySQL session
-to UTC, and mysql2 reads/writes dates with timezone Z. Responses use ISO UTC dates.
-History sorts by creation date descending, then ID descending to break ties.
-
-`db:setup` never drops existing application data. It refuses the old users-only
-schema; choose a new DB_NAME instead of deleting existing tables. `db:seed` checks
-20 unique IDs and transactionally upserts movie metadata. Repeating it preserves
-accounts, watchlists, and viewing records. The original PostgreSQL-style seed.sql
-is left unchanged and is not executed.
-
 ## API and response contract
 
 Every application JSON response contains all three fields:
@@ -200,17 +156,16 @@ trimmed, lowercased, and limited to 254 characters. Passwords require at least
 8 characters and at most 72 UTF-8 bytes; they are not trimmed. Emoji passwords
 are checked by byte length rather than character count.
 
-Registration inserts directly and lets unique constraints settle races. Duplicate
-usernames/emails return 422. Password hashes use asynchronous bcrypt with cost 12
+Duplicate usernames/emails return 422. Password hashes use asynchronous bcrypt with cost 12
 and are never returned. Login failures use the same message for unknown emails
 and incorrect passwords. JWTs expire after one day, use HS256, and carry the user
 ID in sub. Protected requests verify the signature, algorithm, expiration, and
-current account. There are no refresh tokens in this version.
+current account. There are no refresh tokens.
 
 ### Movies, watchlists, and history
 
-Movie responses include numeric rating, genres/cast arrays, and the starter's
-snake_case poster_url. Search matches literal substrings of titles/directors;
+Movie responses include numeric rating, genres/cast arrays, and the starter
+snake_case poster_url. Search matches literal substrings of titles/directors,
 percent, underscore, and backslash are escaped before LIKE matching. Genre
 queries map case-insensitively to the dataset's canonical labels. Unknown genres
 return an empty array. `shuffle=true` randomizes only the matching movies.
@@ -226,9 +181,7 @@ limit is capped at 100. Invalid pagination returns 422; pages beyond the end
 return an empty array.
 
 Saving a viewing inserts its review and removes that user's watchlist entry in
-one transaction. Deleting zero watchlist rows is allowed. Failure rolls back both
-changes; the dedicated connection is released in finally. The frontend reloads
-both history and watchlist state before refreshing movie buttons.
+one transaction. Deleting zero watchlist rows is allowed.
 
 ### Gemini
 
@@ -270,49 +223,60 @@ actual-SDK tests against a controlled local HTTP server.
 | 503 | Gemini unconfigured/unavailable or incomplete seed data |
 | 504 | Gemini request deadline exceeded |
 
-Helmet sets API security headers; HSTS is disabled for local HTTP development.
-Unexpected server errors are logged without returning stack traces to clients.
-The frontend retains its existing localStorage JWT behavior and clears it on
-logout. Dynamic text is inserted as DOM text nodes, and images use DOM properties
-with HTTP(S) URL checks. The static template markup contains only trusted layout,
-fixed choices, and validated numeric IDs. No hand-written HTML escaping is used.
+## Vercel with TiDB Cloud Starter
 
-## Verification
+Use the Express preset, root directory `API`, Node.js 24.x, and no build command
+or output directory. `src/app.js` exports the app for Vercel; `src/server.js`
+continues to start the local server.
 
-### Manual checks
+Enable **Include source files outside of the Root Directory in the Build Step**
+in Vercel's project settings. The API reads `../data/movies.json` during startup;
+that file must be included in the deployment. If runtime logs report ENOENT for
+this file, check this setting and redeploy.
 
-With MySQL and the API running:
+Set these variables in Vercel, using your own TiDB connection values:
 
-```powershell
-Invoke-RestMethod http://localhost:8000/api/health
-Invoke-RestMethod 'http://localhost:8000/api/movies?genre=Sci-Fi&search=Inception'
+```dotenv
+DB_HOST=your-tidb-public-host
+DB_PORT=4000
+DB_USER=your-prefixed-tidb-username
+DB_PASSWORD=your-private-password
+DB_NAME=filmlog
+DB_SSL=true
+DB_CONNECTION_LIMIT=2
+JWT_SECRET=your-random-secret-at-least-32-bytes
+GEMINI_API_KEY=your-private-key
+GEMINI_MODEL=your-supported-model
+CORS_ORIGINS=https://your-frontend-domain.example
 ```
 
-Open `http://localhost:8000` and verify registration/login, movie discovery,
-watchlist changes, and a viewing record. Logging a viewing should also remove
-that movie from the signed-in user's watchlist. Configure Gemini to use the AI
-Assistant or `npm.cmd run smoke:gemini` for a live recommendation.
+Use the port and complete username provided by TiDB. `DB_SSL=true` enables TLS
+with certificate verification; leave it false for local MySQL without TLS.
+Keep credentials out of Git and rotate passwords shared publicly. Changes to
+Vercel environment variables require a new deployment to take effect.
 
-### Automated-test status
+Before using the hosted API, initialize TiDB from your computer. Save the cloud
+connection settings privately in `API/.env`, then run `npm.cmd run db:setup` and
+`npm.cmd run db:seed` from `API`. These are manual database initialization
+commands, not Vercel build commands. Existing application records are preserved.
 
-The automated test files and their npm test/verification scripts have been
-removed. Use the manual checks above and the live Gemini smoke command to
-check this checkout.
+Setup recognizes TiDB 7.2+ and requires enabled CHECK constraints. If setup
+reports they are disabled, enable them in your own TiDB instance's SQL console:
 
-The removed development suite previously covered validation, actual MySQL SQL
-and constraints, concurrent duplicates, JWTs, ownership, rollback, connection
-release, persistence, SDK cancellation, and browser text-injection cases. That
-history is not a substitute for checking the current checkout.
+```sql
+SET GLOBAL tidb_enable_check_constraint = ON;
+```
 
-## Troubleshooting
+Then rerun setup. It verifies that the review rating constraint is enforced;
+do not bypass this check. Cloud compatibility and full CRUD flows still need
+verification against your TiDB instance before relying on the deployment.
 
-- A port-in-use error means another process already owns `PORT`. Keep one API
-  instance running; use `Ctrl+C` to stop a duplicate terminal.
-- `Failed running 'src/server.js'` is watch mode's summary, not the underlying
-  cause. Read the earlier error. The browser may still reach another instance.
-- MySQL connection/table errors require checking the service and `DB_*` settings,
-  then running `db:setup` and `db:seed` as appropriate.
-- Changing `.env` requires restarting the API. Source watch mode is not a reliable
-  way to reload environment-file changes.
-- Saved frontend API URLs override the default. Update browser Settings if the
-  frontend still calls an older host or port.
+Check `/api/health` first, then `/api/movies` (20 seeded movies). Health only
+checks HTTP availability, not database connectivity. For a function startup
+failure, inspect Vercel runtime logs for the specific exception.
+
+Vercel does not serve this project's `frontend` directory through Express static
+middleware. Deploy that frontend separately and set its API URL to the backend's
+`https://your-api-domain/api`; allow its exact origin in `CORS_ORIGINS`.
+
+

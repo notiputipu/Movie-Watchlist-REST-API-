@@ -2,6 +2,10 @@ import 'dotenv/config';
 import mysql from 'mysql2/promise';
 
 export function getDatabaseConfig() {
+    const ssl = process.env.DB_SSL ?? 'false';
+    if (!['true', 'false'].includes(ssl)) {
+        throw new Error('DB_SSL must be true or false.');
+    }
     const port = Number(process.env.DB_PORT ?? 3306);
     if (!Number.isInteger(port) || port < 1 || port > 65535) {
         throw new Error('DB_PORT must be an integer between 1 and 65535.');
@@ -14,6 +18,7 @@ export function getDatabaseConfig() {
         database: process.env.DB_NAME ?? 'filmlog',
         timezone: 'Z',
         connectTimeout: 5000,
+        ...(ssl === 'true' ? { ssl: { rejectUnauthorized: true, minVersion: 'TLSv1.2' } } : {}),
     };
 }
 
