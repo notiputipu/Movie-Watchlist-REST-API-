@@ -229,6 +229,12 @@ Use the Express preset, root directory `API`, Node.js 24.x, and no build command
 or output directory. `src/app.js` exports the app for Vercel; `src/server.js`
 continues to start the local server.
 
+On Vercel, the app trusts the nearest proxy so same-origin CORS checks recognize
+the browser's HTTPS protocol. When the frontend is on another domain, include
+its exact origin (for example `https://moviewatchlist-virid.vercel.app`) in
+`CORS_ORIGINS`, with no trailing slash or `/api` path. Separate multiple allowed
+origins with commas and redeploy after changing environment variables.
+
 Enable **Include source files outside of the Root Directory in the Build Step**
 in Vercel's project settings. The API reads `../data/movies.json` during startup;
 that file must be included in the deployment. If runtime logs report ENOENT for

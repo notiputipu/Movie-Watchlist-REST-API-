@@ -11,6 +11,9 @@ import { moviesRouter } from './routes/movies.routes.js';
 import { watchlistRouter } from './routes/watchlist.routes.js';
 import { watchedRouter } from './routes/watched.routes.js';
 export const app = express();
+// Vercel terminates HTTPS at its proxy before forwarding requests to Express.
+// Trust that proxy so req.protocol reflects the browser's original HTTPS URL.
+if (process.env.VERCEL === '1') app.set('trust proxy', 1);
 const allowedOrigins = new Set((process.env.CORS_ORIGINS ?? 'http://localhost:3000,http://127.0.0.1:3000')
     .split(',').map((origin) => origin.trim()).filter(Boolean));
 for (const origin of allowedOrigins) {
