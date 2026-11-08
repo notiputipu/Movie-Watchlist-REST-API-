@@ -30,10 +30,13 @@ export async function applySchema(connection) {
     for (const statement of sql.split(';').map((part) => part.trim()).filter(Boolean)) {
         await connection.query(statement);
     }
-    const [constraints] = await connection.query(`SELECT ENFORCED FROM information_schema.TABLE_CONSTRAINTS
-        WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'reviews'
-        AND CONSTRAINT_NAME = 'reviews_rating_check' AND CONSTRAINT_TYPE = 'CHECK'`);
-    if (constraints.length !== 1 || constraints[0].ENFORCED !== 'YES') {
+    // TiDB's TABLE_CONSTRAINTS table does not expose MySQL's ENFORCED column.
+    // Both servers show CHECK declarations and NOT ENFORCED in SHOW CREATE TABLE.
+    const [[table]] = await connection.query('SHOW CREATE TABLE reviews');
+    const ratingConstraint = table['Create Table'].match(
+        /CONSTRAINT\s+`reviews_rating_check`\s+CHECK\b[^\r\n]*/i,
+    );
+    if (!ratingConstraint || /\bNOT\s+ENFORCED\b/i.test(ratingConstraint[0])) {
         throw new Error('The reviews rating CHECK constraint is missing or not enforced. Database setup is incomplete.');
     }
 }
