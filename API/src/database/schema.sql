@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     UNIQUE KEY users_username_unique (username),
     UNIQUE KEY users_email_unique (email)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS movies (
     id INT UNSIGNED NOT NULL PRIMARY KEY,
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS movies (
     synopsis TEXT NOT NULL,
     poster_url TEXT NOT NULL,
     cast_members JSON NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS watchlists (
     user_id INT UNSIGNED NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS watchlists (
     PRIMARY KEY (user_id, movie_id),
     CONSTRAINT watchlists_user_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT watchlists_movie_fk FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS reviews (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -41,4 +41,4 @@ CREATE TABLE IF NOT EXISTS reviews (
     CONSTRAINT reviews_user_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT reviews_movie_fk FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE,
     INDEX reviews_user_history (user_id, created_at, id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB;
