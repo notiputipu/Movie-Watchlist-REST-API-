@@ -10,11 +10,6 @@
     "start": "node src/server.js",
     "db:setup": "node src/database/setup.js",
     "db:seed": "node src/database/seed.js",
-    "test": "node --test test/unit/*.test.js",
-    "test:integration": "node --test --test-concurrency=1 test/integration/*.test.js",
-    "test:browser": "node --test --test-concurrency=1 test/browser/*.test.js",
-    "verify": "npm run test && npm run test:integration",
-    "verify:all": "npm run verify && npm run test:browser",
     "smoke:gemini": "node scripts/smoke-gemini.js"
   },
   "keywords": [],

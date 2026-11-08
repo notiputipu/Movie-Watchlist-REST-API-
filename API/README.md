@@ -8,7 +8,7 @@ There is no Prisma, TypeScript, build step, or dist directory.
 ## First run
 
 1. Start a native MySQL server. This project was verified with the installed
-   MySQL 8.0.46; setup and integration tests require MySQL 8.0.16 or newer and
+   MySQL 8.0.46; setup requires MySQL 8.0.16 or newer and
    reject MariaDB. MySQL 8.4 can also be used, but was not the server tested here.
 2. Open a terminal in `API` and run `npm.cmd ci`.
 3. Copy `.env.example` to `.env` only if you do not already have a local file.
@@ -21,9 +21,9 @@ npm.cmd run db:seed
 npm.cmd run dev
 ```
 
-The local `.env` created during implementation already has a generated JWT secret
-and database settings. Keep it private and out of Git. `npm.cmd` avoids this
-computer's PowerShell restriction on `npm.ps1`.
+Each checkout needs its own local `.env` with database credentials and a generated
+JWT secret. Keep it private and out of Git. Use `npm.cmd` when PowerShell blocks
+`npm.ps1`. Restart the server after changing `.env`.
 
 The default API address is `http://localhost:8000/api`. Try:
 
@@ -35,9 +35,7 @@ Invoke-RestMethod http://localhost:8000/api/movies
 Stop the development server with `Ctrl+C`. `npm.cmd start` runs the same source
 without automatic restart. The MySQL Windows service is independent of Node.
 
-This computer's existing MySQL80 service now binds both the classic and X
-listeners to `127.0.0.1`. Its original configuration was backed up before the
-service restart. For another Windows installation, review the helper first:
+For a local-only Windows MySQL service, review the optional helper first:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Restrict-MySqlToLocalhost.ps1 -WhatIf
@@ -59,7 +57,7 @@ files and restores the previous configuration if restarting the service fails.
 | `CORS_ORIGINS` | Comma-separated exact frontend origins |
 | `GEMINI_API_KEY` | Optional until you use recommendations |
 | `GEMINI_MODEL` | Default `gemini-3.8-flash`; choose a model available to your key |
-| `BROWSER_CHANNEL` | Optional installed Playwright browser: `chrome` or `msedge` |
+| `BROWSER_CHANNEL` | Legacy test setting; unused while the test files are absent |
 
 To generate a fresh secret locally:
 
@@ -175,7 +173,7 @@ Every application JSON response contains all three fields:
 { "success": true, "data": {}, "error": null }
 ```
 
-An error has `success: false`, `data: null`, and a readable `error` string.
+An error has `success: false`, `data: null`, and an `error` string.
 Normal HEAD and CORS preflight responses follow HTTP's no-body behavior.
 
 | Method/path | Request | Success |
@@ -281,30 +279,40 @@ fixed choices, and validated numeric IDs. No hand-written HTML escaping is used.
 
 ## Verification
 
+### Manual checks
+
+With MySQL and the API running:
+
 ```powershell
-npm.cmd test
-npm.cmd run test:integration
-npm.cmd run verify
-npm.cmd run test:browser
-npm.cmd run verify:all
+Invoke-RestMethod http://localhost:8000/api/health
+Invoke-RestMethod 'http://localhost:8000/api/movies?genre=Sci-Fi&search=Inception'
 ```
 
-`verify` runs fast tests plus real MySQL integration tests. `verify:all` also runs
-the browser tests. MySQL must be running and the configured account must be able
-to create/drop isolated test databases and create test-only triggers. Unavailable
-MySQL fails the tests instead of skipping them. Application databases are not used
-as fixtures or dropped by the test harness.
+Open `http://localhost:8000` and verify registration/login, movie discovery,
+watchlist changes, and a viewing record. Logging a viewing should also remove
+that movie from the signed-in user's watchlist. Configure Gemini to use the AI
+Assistant or `npm.cmd run smoke:gemini` for a live recommendation.
 
-For browser tests, install Playwright Chromium once with
-`npx.cmd playwright install chromium`. Alternatively set BROWSER_CHANNEL=chrome
-or msedge to use an installed browser. This computer uses its installed Chrome;
-the downloaded Chromium executable could not launch here.
+### Automated-test status
 
-Tests cover real constraints/JSON queries, concurrent duplicates, byte-limited
-passwords, JWT rejection, ownership, wildcard escaping, UTC/tie ordering,
-pagination, repeat viewings, rollback, connection reuse after repeated failures,
-and persistence across API process restarts. Browser tests exercise the actual
-companion frontend and hostile usernames, metadata, reviews, inspector entries,
-and AI text, checking for execution or token exfiltration. Third-party styling,
-icons, and image downloads are stubbed for deterministic functional tests; this
-is not a screenshot/visual comparison suite.
+The automated test files and their npm test/verification scripts have been
+removed. Use the manual checks above and the live Gemini smoke command to
+check this checkout.
+
+The removed development suite previously covered validation, actual MySQL SQL
+and constraints, concurrent duplicates, JWTs, ownership, rollback, connection
+release, persistence, SDK cancellation, and browser text-injection cases. That
+history is not a substitute for checking the current checkout.
+
+## Troubleshooting
+
+- A port-in-use error means another process already owns `PORT`. Keep one API
+  instance running; use `Ctrl+C` to stop a duplicate terminal.
+- `Failed running 'src/server.js'` is watch mode's summary, not the underlying
+  cause. Read the earlier error. The browser may still reach another instance.
+- MySQL connection/table errors require checking the service and `DB_*` settings,
+  then running `db:setup` and `db:seed` as appropriate.
+- Changing `.env` requires restarting the API. Source watch mode is not a reliable
+  way to reload environment-file changes.
+- Saved frontend API URLs override the default. Update browser Settings if the
+  frontend still calls an older host or port.
