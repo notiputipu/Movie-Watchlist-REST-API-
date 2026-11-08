@@ -1,0 +1,37 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "FilmLog REST API built with JavaScript, Express, and MySQL",
+  "private": true,
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "db:setup": "node src/database/setup.js",
+    "db:seed": "node src/database/seed.js",
+    "test": "node --test test/unit/*.test.js",
+    "test:integration": "node --test --test-concurrency=1 test/integration/*.test.js",
+    "test:browser": "node --test --test-concurrency=1 test/browser/*.test.js",
+    "verify": "npm run test && npm run test:integration",
+    "verify:all": "npm run verify && npm run test:browser",
+    "smoke:gemini": "node scripts/smoke-gemini.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/genai": "3.0.0",
+    "bcryptjs": "3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "helmet": "8.3.0",
+    "jsonwebtoken": "9.0.3",
+    "mysql2": "^3.24.6",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0"
+  }
+}
